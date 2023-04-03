@@ -160,6 +160,7 @@ def get_parser():
 
     parser.add_argument('--stride-train', type=int, default=32)
     parser.add_argument('--stride-test', type=int, default=32)
+    parser.add_argument('--final_transposed_conv', type=int, default=4)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--comment', type=str, default=None)
 

@@ -35,19 +35,21 @@ def download_model(model_type):
 
 
 def visualize(image, pred, joint_names, joint_edges):
-    try:
+    # try:
         visualize_poseviz(image, pred, joint_names, joint_edges)
-    except ImportError:
-        print(
-            'Install PoseViz from https://github.com/isarandi/poseviz to get a nicer 3D'
-            'visualization.')
-        visualize_matplotlib(image, pred, joint_names, joint_edges)
+    # except ImportError:
+    #     print(
+    #         'Install PoseViz from https://github.com/isarandi/poseviz to get a nicer 3D'
+    #         'visualization.')
+    #     visualize_matplotlib(image, pred, joint_names, joint_edges)
 
 
 def visualize_poseviz(image, pred, joint_names, joint_edges):
     # Install PoseViz from https://github.com/isarandi/poseviz
     import poseviz
-    camera = poseviz.Camera.from_fov(55, image.shape)
+    import cameralib
+    camera = cameralib.Camera.from_fov(55, image.shape)
+    
     viz = poseviz.PoseViz(joint_names, joint_edges)
     viz.update(frame=image, boxes=pred['boxes'], poses=pred['poses3d'], camera=camera)
 

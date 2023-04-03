@@ -14,6 +14,7 @@ import data.h36m
 import options
 import paths
 import util
+import tfu3d
 from options import FLAGS
 
 
@@ -32,14 +33,17 @@ def main():
     all_image_relpaths, all_true3d = get_all_gt_poses()
     activities = np.array([re.search(f'Images/(.+?)\.', path)[1].split(' ')[0]
                            for path in all_image_relpaths])
+    
 
     if FLAGS.seeds > 1:
+        ## multiple seeds(기준을 여러개로)
         mean_per_seed, std_per_seed = evaluate_multiple_seeds(all_true3d, activities)
         print(to_latex(mean_per_seed))
         print(to_latex(std_per_seed))
     else:
+        ## 단일 seeds로 검사(기준을 하나로)
         metrics = evaluate(FLAGS.pred_path, all_true3d, activities)
-        print(to_latex(metrics))
+        print(metrics)
 
 
 def evaluate_multiple_seeds(all_true3d, activities):
@@ -72,6 +76,7 @@ def evaluate(pred_path, all_true3d, activities):
 
 
 def to_latex(numbers):
+    ##숫자 중간에 &를 끼우고 소수점 첫번째 자리까지
     return ' & '.join([f'{x:.1f}' for x in numbers])
 
 

@@ -40,7 +40,7 @@ from layers.conv2d_dense import Conv2DDenseSame, StridingInfo, TrainTestSwitchLa
 from options import FLAGS
 
 BASE_WEIGHTS_PATH = (
-    'https://storage.googleapis.com/keras-applications/resnet/')
+    'https://storage.googleapis.com/tensorflow/keras-applications/resnet/')
 WEIGHTS_HASHES = {
     'resnet50': ('2cb95161c43110f7111970584f804107', '4d473c1dd8becc155b73f8504c6f6626'),
     'resnet101': ('f1aeb4b969a6efcfb50fad2f0c20cfc5', '88cf7a10940856eca736dc7b7e228a21'),

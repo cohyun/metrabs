@@ -191,6 +191,7 @@ def back_project(camcoords2d, delta_z, z_offset):
 
 
 def is_within_fov(imcoords):
+    stride_train = FLAGS.stride_train
     stride_train = FLAGS.stride_train / FLAGS.final_transposed_conv
     offset = -stride_train / 2 if not FLAGS.centered_stride else 0
     lower = tf.cast(stride_train * 0.75 + offset, tf.float32)

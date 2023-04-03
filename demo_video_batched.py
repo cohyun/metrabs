@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import os
 import sys
-
+import cameralib
 import cv2
 import tensorflow as tf
-
 import poseviz
 
 
@@ -13,16 +12,21 @@ def main():
     skeleton = 'smpl+head_30'
     joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
     joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
+    
+    
+
     viz = poseviz.PoseViz(joint_names, joint_edges)
     frame_batches = tf.data.Dataset.from_generator(
         frames_from_video, tf.uint8, [None, None, 3]).batch(32).prefetch(1)
+    
 
     for frame_batch in frame_batches:
         pred = model.detect_poses_batched(frame_batch, skeleton=skeleton, default_fov_degrees=55)
-        camera = poseviz.Camera.from_fov(55, frame_batch.shape[1:3])
+        camera = cameralib.Camera.from_fov(55, frame_batch.shape[1:3])
         for frame, boxes, poses3d in zip(
                 frame_batch.numpy(), pred['boxes'].numpy(), pred['poses3d'].numpy()):
             viz.update(frame, boxes, poses3d, camera)
+
     viz.close()
 
 

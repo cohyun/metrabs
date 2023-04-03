@@ -17,7 +17,8 @@ from data.preproc_for_efficiency import make_efficient_example
 
 @util.cache_result_on_disk(f'{paths.CACHE_DIR}/h36m.pkl', min_time="2020-11-02T21:30:43")
 def make_h36m(
-        train_subjects=(1, 5, 6, 7, 8), valid_subjects=(), test_subjects=(9, 11),
+       train_subjects=(1, 5, 6, 7, 8), valid_subjects=(), test_subjects=(9, 11),
+
         correct_S9=True, partial_visibility=False):
     joint_names = (
         'rhip,rkne,rank,lhip,lkne,lank,tors,neck,head,htop,'

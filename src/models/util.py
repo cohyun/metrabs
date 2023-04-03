@@ -8,7 +8,6 @@ from options import FLAGS
 
 def heatmap_to_image(coords, is_training):
     stride = FLAGS.stride_train if is_training else FLAGS.stride_test
-
     stride //= FLAGS.final_transposed_conv
     last_image_pixel = FLAGS.proc_side - 1
     last_receptive_center = last_image_pixel - (last_image_pixel % stride)
