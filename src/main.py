@@ -26,6 +26,7 @@ import tfu
 import util
 from options import FLAGS, logger
 from tfu import TEST, TRAIN, VALID
+from tqdm import tqdm
 
 
 def train():
@@ -220,7 +221,8 @@ def dummy_strategy():
     return attrdict.AttrDict(scope=dummy_scope, num_replicas_in_sync=1)
 
 
-def export():
+## 저장된 경로로 모델을 내보내는 함수 
+def export(): 
     dataset3d = data.datasets3d.get_dataset(FLAGS.dataset)
     ji = dataset3d.joint_info
     del dataset3d
@@ -243,6 +245,10 @@ def export():
         out_path, include_optimizer=False, overwrite=True,
         options=tf.saved_model.SaveOptions(experimental_custom_gradients=True))
 
+
+
+
+####################################모델 훈련해서 예측하는 부분######################################
 
 def predict():
     dataset3d = data.datasets3d.get_dataset(FLAGS.dataset)
@@ -270,14 +276,14 @@ def predict():
     ckpt = tf.train.Checkpoint(model=model)
     ckpt_manager = tf.train.CheckpointManager(ckpt, FLAGS.checkpoint_dir, None)
     restore_if_ckpt_available(ckpt, ckpt_manager, expect_partial=True)
-
+    
+    ##데이터 불러오는 곳
     examples3d_test = get_examples(dataset3d, tfu.TEST, FLAGS)
     data_test = build_dataflow(
         examples3d_test, data.data_loading.load_and_transform3d,
         (dataset3d.joint_info, TEST), TEST, batch_size=FLAGS.batch_size_test,
         n_workers=FLAGS.workers)
     n_predict_steps = int(np.ceil(len(examples3d_test) / FLAGS.batch_size_test))
-
     r = trainer.predict(
         data_test, verbose=1 if sys.stdout.isatty() else 0, steps=n_predict_steps)
     r = attrdict.AttrDict(r)
@@ -293,6 +299,8 @@ def predict():
         'nCc, njc->njC', r.rot_to_world, coords3d_pred) + tf.expand_dims(r.cam_loc, 1)
     coords3d_pred_world = models.util.select_skeleton(
         coords3d_pred_world, model_joint_info, FLAGS.output_joints).numpy()
+    
+
     np.savez(FLAGS.pred_path, image_path=r.image_path, coords3d_pred_world=coords3d_pred_world)
 
 
@@ -300,7 +308,11 @@ def build_dataflow(
         examples, load_fn, extra_args, learning_phase, batch_size, n_workers, rng=None,
         n_completed_steps=0, n_total_steps=None, n_test_epochs=1, roundrobin_sizes=None):
     if learning_phase == tfu.TRAIN:
-        n_total_items = int(n_total_steps * batch_size if n_total_steps is not None else None)
+        # n_total_items = int(n_total_steps * batch_size if n_total_steps is not None else None)
+        if n_total_steps is not None:
+            n_total_items = int(n_total_steps * batch_size)
+        else:
+            n_total_items = None
     elif learning_phase == tfu.VALID:
         n_total_items = None
     else:
@@ -313,7 +325,7 @@ def build_dataflow(
         roundrobin_sizes=roundrobin_sizes)
     return dataset.batch(batch_size, drop_remainder=(learning_phase == tfu.TRAIN))
 
-
+## 학습데이터, 검증데이터, 테스트 데이터를 추출하는 부분
 def get_examples(dataset, learning_phase, flags):
     if learning_phase == tfu.TRAIN:
         str_example_phase = flags.train_on
@@ -336,7 +348,7 @@ def get_examples(dataset, learning_phase, flags):
         raise Exception(f'No such phase as {str_example_phase}')
     return examples
 
-
+##체크포인트 파일 생성부분
 def get_n_completed_steps(logdir, load_path):
     if load_path is not None:
         return int(re.search('ckpt-(?P<num>\d+)', os.path.basename(load_path))['num'])
@@ -369,8 +381,58 @@ def restore_if_ckpt_available(
     if initial_checkpoint_path and not resuming_checkpoint_path:
         global_step_var.assign(0)
 
+####################################모델 로드해서 예측하는 부분######################################
+
+# def predict():
+
+#     model = tf.saved_model.load(download_model('metrabs_eff2l_y4')) ##이미 학습된 metrabs 모델 사용
+#     skeleton = 'smpl_24'
+#     dataset3d = data.datasets3d.get_dataset(FLAGS.dataset)
+#     examples3d_test = get_examples(dataset3d, tfu.TEST, FLAGS)
+    
+#     data_test=build_dataflow(
+#         examples3d_test, data.data_loading.load_and_transform3d,
+#         (dataset3d.joint_info,TEST),TEST,batch_size=FLAGS.batch_size_test,
+#         n_workers=FLAGS.workers
+#     ) #데이터 전처리
+    
+#     poses_3d=[] #3d 좌표값을 정리할
+#     for batch in data_test:
+#         images= batch['image']
+#         for normal_image in images:
+#             image=normal_image*255 ##정규화되지 않은 값으로 바꿔줌
+#             image_uint8 = tf.cast(image, tf.uint8) ##float32형식에서 uint8형식으로 바꿔야 model.detect에 사용할 수 있음
+#             pred = model.detect_poses(image_uint8, default_fov_degrees=55, skeleton=skeleton)
+#             if pred['poses3d'] is not None:
+#                 poses_3d.append(pred['poses3d'].numpy())
+#             else:
+#                 print("No poses detected.")
+#         print(poses_3d)
+
+    
+    
+# #     ##두번째 데이터를 위한 부분 
+# #     # image_path = examples3d_test[0].image_path
+# #     # print(image_path)
+
+
+    
+    
+
+
+def download_model(model_type):
+    server_prefix = 'https://omnomnom.vision.rwth-aachen.de/data/metrabs'
+    model_zippath = tf.keras.utils.get_file(
+        origin=f'{server_prefix}/{model_type}.zip',
+        extract=True, cache_subdir='models')
+    model_path = os.path.join(os.path.dirname(model_zippath), model_type)
+    return model_path
+
+
+
 
 def main():
+    ## 파서 관리 
     init.initialize()
 
     if FLAGS.train:

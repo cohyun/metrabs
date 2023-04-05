@@ -11,11 +11,10 @@ def main():
 
     pred = model.detect_poses(image, default_fov_degrees=55, skeleton=skeleton)
     pred = tf.nest.map_structure(lambda x: x.numpy(), pred)  # convert tensors to numpy arrays
-    print(pred['boxes'], pred['poses3d'], pred['poses2d'])
-
-    joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
-    joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
-    visualize(image.numpy(), pred, joint_names, joint_edges)
+    # print(pred['boxes'], pred['poses3d'], pred['poses2d'])
+    # joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
+    # joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
+    # visualize(image.numpy(), pred, joint_names, joint_edges)
 
     # Read the docs to learn how to
     # - supply your own bounding boxes

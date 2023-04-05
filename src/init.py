@@ -160,7 +160,7 @@ def get_parser():
 
     parser.add_argument('--stride-train', type=int, default=32)
     parser.add_argument('--stride-test', type=int, default=32)
-    parser.add_argument('--final_transposed_conv', type=int, default=4)
+    parser.add_argument('--final_transposed_conv', type=int, default=1)
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--comment', type=str, default=None)
 
@@ -217,4 +217,12 @@ def get_parser():
     parser.add_argument('--multi-gpu', action=options.BoolAction)
     parser.add_argument('--checkpoint-period', type=int, default=2000)
     parser.add_argument('--model-class', type=str, default='Metrabs')
+    
+    
+    
+    
+    parser.add_argument('--scale-recovery', type=str, default='metro')
+    parser.add_argument('--epochs', type=float, default=0,
+                        help='Number of training epochs, 0 means unlimited.')
+    # parser.add_argument('--logdir', type=str, default='default_logdir')
     return parser

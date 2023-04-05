@@ -18,14 +18,14 @@ from options import FLAGS, logger
 
 def initialize():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, required=True)
-    parser.add_argument('--output-path', type=str, required=True)
-    parser.add_argument('--out-video-dir', type=str)
+    parser.add_argument('--model-path', type=str,  default='/home/sj/Documents/Models/metrabs_eff2l_y4')
+    parser.add_argument('--output-path', type=str, default='/home/sj/Documents/Datasets')
+    parser.add_argument('--out-video-dir', type=str, default='/home/sj/Documents/Datasets')
     parser.add_argument('--num-aug', type=int, default=1)
     parser.add_argument('--frame-step', type=int, default=64)
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--correct-S9', action=options.BoolAction, default=False)
-    parser.add_argument('--viz', action=options.BoolAction)
+    parser.add_argument('--viz', action=options.BoolAction, default=True)
     options.initialize(parser)
     for gpu in tf.config.experimental.list_physical_devices('GPU'):
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -41,22 +41,25 @@ def main():
         model.estimate_poses_batched, internal_batch_size=0, num_aug=FLAGS.num_aug,
         antialias_factor=2, skeleton=skeleton)
 
+#write_video=bool(FLAGS.out_video_dir),매개변수 지움
     viz = poseviz.PoseViz(
-        joint_names, joint_edges, write_video=bool(FLAGS.out_video_dir),
+        joint_names, joint_edges, 
         world_up=(0, 0, 1), ground_plane_height=0,
         queue_size=2 * FLAGS.batch_size) if FLAGS.viz else None
 
     image_relpaths_all = []
     coords_all = []
     for i_subject in (9, 11):
+        print("현재 실험 중 디렉토리: ",i_subject)
         for activity_name, camera_id in itertools.product(
                 data.h36m.get_activity_names(i_subject), range(4)):
-            if FLAGS.viz:
-                viz.new_sequence()
-                if FLAGS.out_video_dir:
-                    viz.start_new_video(
-                        f'{FLAGS.out_video_dir}/S{i_subject}/{activity_name}.{camera_id}.mp4',
-                        fps=max(50 / FLAGS.frame_step, 2))
+            # if FLAGS.viz:
+            #     viz.new_sequence()
+            #     if FLAGS.out_video_dir:
+            #         viz.start_new_video(
+            #             f'{FLAGS.out_video_dir}/S{i_subject}/{activity_name}.{camera_id}.mp4',
+            #             fps=max(50 / FLAGS.frame_step, 2))
+            #         print('Video saved at', FLAGS.out_video_dir)
 
             logger.info(f'Predicting S{i_subject} {activity_name} {camera_id}...')
             frame_relpaths, bboxes, camera = get_sequence(i_subject, activity_name, camera_id)
@@ -70,8 +73,9 @@ def main():
             coords_all.append(coords3d_pred_world)
 
     np.savez(
-        FLAGS.output_path, image_path=np.concatenate(image_relpaths_all, axis=0),
+        'predictions_h36m.npz', image_path=np.concatenate(image_relpaths_all, axis=0),
         coords3d_pred_world=np.concatenate(coords_all, axis=0))
+    print('np saved...')
 
     if FLAGS.viz:
         viz.close()
