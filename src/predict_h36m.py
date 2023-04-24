@@ -25,7 +25,7 @@ def initialize():
     parser.add_argument('--frame-step', type=int, default=64)
     parser.add_argument('--batch-size', type=int, default=64)
     parser.add_argument('--correct-S9', action=options.BoolAction, default=False)
-    parser.add_argument('--viz', action=options.BoolAction, default=True)
+    parser.add_argument('--viz', action=options.BoolAction, default=False)
     options.initialize(parser)
     for gpu in tf.config.experimental.list_physical_devices('GPU'):
         tf.config.experimental.set_memory_growth(gpu, True)
