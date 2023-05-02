@@ -5,6 +5,7 @@ import cameralib
 import cv2
 import tensorflow as tf
 import poseviz
+import numpy as np
 
 
 def main():
