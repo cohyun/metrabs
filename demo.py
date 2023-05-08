@@ -6,15 +6,16 @@ import tensorflow as tf
 
 def main():
     model = tf.saved_model.load(download_model('metrabs_eff2l_y4'))
-    image = tf.image.decode_jpeg(tf.io.read_file('img/test_image_3dpw.jpg'))
+    image = tf.image.decode_jpeg(tf.io.read_file('frame.jpg'))
     skeleton = 'smpl_24'
 
     pred = model.detect_poses(image, default_fov_degrees=55, skeleton=skeleton)
     pred = tf.nest.map_structure(lambda x: x.numpy(), pred)  # convert tensors to numpy arrays
-    # print(pred['boxes'], pred['poses3d'], pred['poses2d'])
-    # joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
-    # joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
-    # visualize(image.numpy(), pred, joint_names, joint_edges)
+    print(pred['boxes'], pred['poses3d'], pred['poses2d'])
+
+    joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
+    joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
+    visualize(image.numpy(), pred, joint_names, joint_edges)
 
     # Read the docs to learn how to
     # - supply your own bounding boxes
@@ -34,13 +35,13 @@ def download_model(model_type):
 
 
 def visualize(image, pred, joint_names, joint_edges):
-    # try:
+    try:
         visualize_poseviz(image, pred, joint_names, joint_edges)
-    # except ImportError:
-    #     print(
-    #         'Install PoseViz from https://github.com/isarandi/poseviz to get a nicer 3D'
-    #         'visualization.')
-    #     visualize_matplotlib(image, pred, joint_names, joint_edges)
+    except ImportError:
+        print(
+            'Install PoseViz from https://github.com/isarandi/poseviz to get a nicer 3D'
+            'visualization.')
+        visualize_matplotlib(image, pred, joint_names, joint_edges)
 
 
 def visualize_poseviz(image, pred, joint_names, joint_edges):
@@ -48,7 +49,6 @@ def visualize_poseviz(image, pred, joint_names, joint_edges):
     import poseviz
     import cameralib
     camera = cameralib.Camera.from_fov(55, image.shape)
-    
     viz = poseviz.PoseViz(joint_names, joint_edges)
     viz.update(frame=image, boxes=pred['boxes'], poses=pred['poses3d'], camera=camera)
 

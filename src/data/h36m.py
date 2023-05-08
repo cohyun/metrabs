@@ -176,7 +176,7 @@ def make_h36m_camera(extrinsic_params, intrinsic_params):
 
 def get_activity_names(i_subject):
     h36m_root = f'{paths.DATA_ROOT}/h36m/'
-    subject_images_root = f'{h36m_root}/S{i_subject}/Images/'
+    subject_images_root = f'{h36m_root}/Random_Box/S{i_subject}/Images/'
     subdirs = [elem for elem in os.listdir(subject_images_root)
                if os.path.isdir(f'{subject_images_root}/{elem}')]
     activity_names = set(elem.split('.')[0] for elem in subdirs if '_' not in elem)

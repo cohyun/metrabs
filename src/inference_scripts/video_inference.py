@@ -7,6 +7,8 @@ import os.path
 import tensorflow as tf
 
 import cameralib
+import sys
+sys.path.append('/home/sj/Projects/test/metrabs/src')
 import options
 import poseviz
 import video_io
@@ -15,7 +17,7 @@ from options import FLAGS
 
 def initialize():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model-path', type=str, required=True)
+    parser.add_argument('--model-path', type=str,  default='/home/sj/Documents/Models/metrabs_eff2l_y4')
     parser.add_argument('--video-dir', type=str)
     parser.add_argument('--video-filenames', type=str)
     parser.add_argument('--viz-downscale', type=int, default=1)
@@ -36,8 +38,9 @@ def initialize():
 def main():
     initialize()
     model = tf.saved_model.load(FLAGS.model_path)
-    joint_names = model.per_skeleton_joint_names[FLAGS.skeleton].numpy().astype(str)
-    joint_edges = model.per_skeleton_joint_edges[FLAGS.skeleton].numpy()
+    skeleton = 'h36m_17'
+    joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
+    joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
     predict_fn = functools.partial(
         model.detect_poses_batched, default_fov_degrees=FLAGS.fov,
         detector_threshold=0.5, detector_flip_aug=True,

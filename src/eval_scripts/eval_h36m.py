@@ -32,9 +32,8 @@ def main():
 
     all_image_relpaths, all_true3d = get_all_gt_poses()
     activities = np.array([re.search(f'Images/(.+?)\.', path)[1].split(' ')[0]
-                           for path in all_image_relpaths])
+                           for path in all_image_relpaths]) ## ['Directions' 'Directions' 'Directions' ... 'Walking' 'Walking' 'Walking']
     
-
     if FLAGS.seeds > 1:
         ## multiple seeds(기준을 여러개로)
         mean_per_seed, std_per_seed = evaluate_multiple_seeds(all_true3d, activities)
@@ -42,8 +41,7 @@ def main():
         print(to_latex(std_per_seed))
     else:
         ## 단일 seeds로 검사(기준을 하나로)
-        metrics = evaluate(FLAGS.pred_path, all_true3d, activities)
-        print(metrics)
+        evaluate(FLAGS.pred_path, all_true3d, activities)
 
 
 def evaluate_multiple_seeds(all_true3d, activities):
@@ -55,24 +53,28 @@ def evaluate_multiple_seeds(all_true3d, activities):
 
 
 def evaluate(pred_path, all_true3d, activities):
-    all_pred3d = get_all_pred_poses(pred_path)
-    if len(all_pred3d) != len(all_true3d):
-        raise Exception(f'Unequal sample count! Pred: {len(all_pred3d)}, GT: {len(all_true3d)}')
+    get_all_pred_poses(pred_path)
+    # all_pred3d = get_all_pred_poses(pred_path)
+    # if len(all_pred3d) != len(all_true3d):
+    #     raise Exception(f'Unequal sample count! Pred: {len(all_pred3d)}, GT: {len(all_true3d)}')
+    # i_root = -1 if FLAGS.root_last else 0
+    # all_pred3d -= all_pred3d[:, i_root, np.newaxis]
+    # all_true3d -= all_true3d[:, i_root, np.newaxis]
 
-    i_root = -1 if FLAGS.root_last else 0
-    all_pred3d -= all_pred3d[:, i_root, np.newaxis]
-    all_true3d -= all_true3d[:, i_root, np.newaxis]
-
-    ordered_activities = (
-            'Directions Discussion Eating Greeting Phoning Posing Purchases ' +
-            'Sitting SittingDown Smoking Photo Waiting Walking WalkDog WalkTogether').split()
-    if FLAGS.procrustes:
-        all_pred3d = tfu3d.rigid_align(all_pred3d, all_true3d, scale_align=True)
-    dist = np.linalg.norm(all_true3d - all_pred3d, axis=-1)
-    overall_mean_error = np.mean(dist)
-    metrics = [np.mean(dist[activities == activity]) for activity in ordered_activities]
-    metrics.append(overall_mean_error)
-    return metrics
+    # ordered_activities = (
+    #         'Directions Discussion Eating Greeting Phoning Posing Purchases ' +
+    #         'Sitting SittingDown Smoking Photo Waiting Walking WalkDog WalkTogether').split()
+    # if FLAGS.procrustes:
+    #     all_pred3d = tfu3d.rigid_align(all_pred3d, all_true3d, scale_align=True)
+    # #mpjpe 값 계산 
+    # dist = np.linalg.norm(all_true3d - all_pred3d, axis=-1)   # dist.shape =(317668,17) 모든 프레임에 대한 17개의 관절좌표 오차
+    # overall_mean_error = np.mean(dist) # 전체 오차 평균
+    # metrics = [np.mean(dist[activities == activity]) for activity in ordered_activities] #[50.718002 55.784798 49.574913 55.769592 60.70252  48.180126 56.34138
+    # metrics.append(overall_mean_error)
+    # for activity, metric in zip(ordered_activities, metrics):
+    #     print(f'{activity}: {metric:.2f}')    
+    # print(f'Overall mean error: {overall_mean_error:.2f}')
+    # return metrics
 
 
 def to_latex(numbers):
@@ -93,10 +95,11 @@ def load_coords(path):
 
 def get_all_gt_poses():
     camera_names = ['54138969', '55011271', '58860488', '60457274']
-    frame_step = 64
+    # 프레임 몇 개씩 뛰고 가져올지 설정
+    frame_step = 1
     all_world_coords = []
     all_image_relpaths = []
-    for i_subj in [9, 11]:
+    for i_subj in [9]:
         for activity, cam_id in itertools.product(data.h36m.get_activity_names(i_subj), range(4)):
             # Corrupt data in original release:
             # if i_subj == 11 and activity == 'Directions' and cam_id == 0:
@@ -122,15 +125,15 @@ def get_all_gt_poses():
     return all_image_relpaths, all_world_coords
 
 
-def get_all_pred_poses(path):
-    results = np.load(path, allow_pickle=True)
-    order = np.argsort(results['image_path'])
-    image_paths = results['image_path'][order]
-    if FLAGS.only_S11:
-        needed = ['S11' in p for p in image_paths]
-        return results['coords3d_pred_world'][order][needed]
-
-    return results['coords3d_pred_world'][order]
+def get_all_pred_poses(path): 
+    results = np.load(path, allow_pickle=True) # image_path 파일, coords3d_pred_world 파일   'h36m/Random_Box/S9/Images/Walking 1.60457274/frame_002445.jpg']
+    order = np.argsort(results['image_path']) # order에 imagepath 로드 [ 10796  10797  10798 ... 307881 307882 307883]
+    image_paths = results['image_path'][214680] # 'h36m/Random_Box/S9/Images/Directions 1.54138969/frame_000002.jpg' ...
+    # if FLAGS.only_S11:
+    #     needed = ['S11' in p for p in image_paths]
+    #     return results['coords3d_pred_world'][order][needed]
+    print(results['coords3d_pred_world'][214680])
+    # return results['coords3d_pred_world'][order]
 
 
 if __name__ == '__main__':
