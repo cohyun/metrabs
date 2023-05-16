@@ -33,7 +33,7 @@ def initialize():
     parser.add_argument('--viz', action=options.BoolAction, default=False)
     parser.add_argument('--extract',type=bool, help='Set True if you have to extract frames from video')
     parser.add_argument('--custom', type=str, help='Set your Custom dataset type (e.g Random_Box, Moving_Box ..')
-
+    parser.add_argument('--single-path',type=str)
     options.initialize(parser)
     for gpu in tf.config.experimental.list_physical_devices('GPU'):
         tf.config.experimental.set_memory_growth(gpu, True)
@@ -43,7 +43,7 @@ def main():
     initialize()
     
     save_dir=f"/home/sj/Documents/Datasets/h36m/{FLAGS.custom}/S9"
-    save_path=f'{save_dir}/predictions_h36m.npz'
+    save_path=f'{save_dir}/BBox_predictions_h36m.npz'
     
     # metrabs는 영상에서 프레임을 이미지로 extract하여 사용
     if FLAGS.extract:
@@ -71,16 +71,9 @@ def main():
     ## Original h36m dataset (S9, S11)
     if not FLAGS.custom:
         for i_subject in (9,11):
-            print("현재 실험 중 디렉토리: ",i_subject)
             for activity_name, camera_id in itertools.product(
                     data.h36m.get_activity_names(i_subject), range(4)):
-                # if FLAGS.viz:
-                #     viz.new_sequence()
-                #     if FLAGS.out_video_dir:
-                #         viz.start_new_video(
-                #             f'{FLAGS.out_video_dir}/S{i_subject}/{activity_name}.{camera_id}.mp4',
-                #             fps=max(50 / FLAGS.frame_step, 2))
-                #         print('Video saved at', FLAGS.out_video_dir)
+
 
                 logger.info(f'Predicting S{i_subject} {activity_name} {camera_id}...')
                 frame_relpaths, bboxes, camera = get_sequence(i_subject, activity_name, camera_id)
@@ -92,48 +85,47 @@ def main():
                 coords3d_pred_world = predict_sequence(predict_fn, ds, frame_batches_cpu, camera, viz)
                 image_relpaths_all.append(frame_relpaths)
                 coords_all.append(coords3d_pred_world)
-        np.savez(
-            'predictions_h36m.npz', image_path=np.concatenate(image_relpaths_all, axis=0),
-            coords3d_pred_world=np.concatenate(coords_all, axis=0))
-        print('np saved...')
+            print("\nimage_relpaths_all\n",image_relpaths_all)
+            print("\ncoords_all\n",coords_all)
+            
+        # np.savez(
+        #     'predictions_h36m.npz', image_path=np.concatenate(image_relpaths_all, axis=0),
+        #     coords3d_pred_world=np.concatenate(coords_all, axis=0))
+        # print('np saved...')
 
     
     
     ## Truncated h366m dataset(S9)
     elif FLAGS.custom:
         i_subject=9
-        print("현재 실험 중 디렉토리: ",i_subject)
+        print("Starting Predicting with H36m subject ",i_subject)
         for activity_name, camera_id in itertools.product(
                 data.h36m.get_activity_names(i_subject), range(4)):
-            # if FLAGS.viz:
-            #     viz.new_sequence()
-            #     if FLAGS.out_video_dir:
-            #         viz.start_new_video(
-            #             f'{FLAGS.out_video_dir}/S{i_subject}/{activity_name}.{camera_id}.mp4',
-            #             fps=max(50 / FLAGS.frame_step, 2))
-            #         print('Video saved at', FLAGS.out_video_dir)
 
-            logger.info(f'Predicting S{i_subject} {activity_name} {camera_id}...')
+
+            print(f'Predicting S{i_subject} {activity_name} {camera_id}...')
             frame_relpaths, bboxes, camera = get_sequence(i_subject, activity_name, camera_id)
             frame_paths = [f'{paths.DATA_ROOT}/{p}' for p in frame_relpaths] # home/sj/Documents/Datasets/h36m/Random_Box/S9/Images/Walking 1.60457274
             box_ds = tf.data.Dataset.from_tensor_slices(bboxes)
             ds, frame_batches_cpu = video_io.image_files_as_tf_dataset(
                 frame_paths, extra_data=box_ds, batch_size=FLAGS.batch_size, tee_cpu=FLAGS.viz)
-
             coords3d_pred_world = predict_sequence(predict_fn, ds, frame_batches_cpu, camera, viz)
-            image_relpaths_all.append(frame_relpaths)
+            image_relpaths_all.append(frame_relpaths) #'h36m/Random_Box/S9/Images/Directions.54138969/frame_002698.jpg']]
             coords_all.append(coords3d_pred_world)
-            print("Working on : ", activity_name," ",camera_id)
-            
+            # print("\nimage_relpaths_all\n",image_relpaths_all)
+            # print("\ncoords_all\n",coords_all)
+            # print("length: ", len(coords_all))
+            # print("shape: ", coords_all[0].shape)
         np.savez(
             save_path, image_path=np.concatenate(image_relpaths_all, axis=0),
             coords3d_pred_world=np.concatenate(coords_all, axis=0))
         print('np saved...')
 
-
+        
    
     if FLAGS.viz:
         viz.close()
+   
 
 
 def predict_sequence(predict_fn, dataset, frame_batches_cpu, camera, viz):
@@ -147,8 +139,10 @@ def predict_sequence(predict_fn, dataset, frame_batches_cpu, camera, viz):
 
     for (frames_b, box_b), frames_b_cpu in zip(dataset, frame_batches_cpu):
         boxes_b = tf.RaggedTensor.from_tensor(box_b[:, tf.newaxis])
+        # gt bounding box 있이 predict
         pred = predict_fn(frames_b, boxes_b)
         pred = tf.nest.map_structure(lambda x: tf.squeeze(x, 1).numpy(), pred)
+
         pose_batches.append(pred['poses3d'])
 
         if FLAGS.viz:
@@ -160,6 +154,7 @@ def predict_sequence(predict_fn, dataset, frame_batches_cpu, camera, viz):
 
 def get_sequence(i_subject, activity_name, i_camera):
     camera_name = ['54138969', '55011271', '58860488', '60457274'][i_camera]
+
     camera = data.h36m.get_cameras(
         f'{paths.DATA_ROOT}/h36m/Release-v1.2/metadata.xml')[i_camera][i_subject - 1]
     coord_path = (f'{paths.DATA_ROOT}/h36m/S{i_subject}/'
@@ -177,7 +172,7 @@ def get_sequence(i_subject, activity_name, i_camera):
     elif FLAGS.custom: ## Truncated h36m dataset
         image_relfolder = f'h36m/{FLAGS.custom}/S{i_subject}/Images/{activity_name}.{camera_name}'# h36m/Random_Box/S9/Images/Walking 1.60457274
 
-    image_relpaths = [f'{image_relfolder}/frame_{i_frame:06d}.jpg'  # h36m/S9/Images/Walking 1.60457274/ + frame_000000.jpg'
+    image_relpaths = [f'{image_relfolder}/frame_{i_frame:06d}.jpg'  # h36m/Random_Box/S9/Images/Directions.54138969/frame_000001.jpg
                       for i_frame in range(0, n_total_frames, FLAGS.frame_step)]
     bbox_path = f'{paths.DATA_ROOT}/h36m/S{i_subject}/BBoxes/{activity_name}.{camera_name}.npy'
     bboxes = np.load(bbox_path)[::FLAGS.frame_step]
