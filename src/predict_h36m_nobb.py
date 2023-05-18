@@ -35,6 +35,9 @@ def initialize():
     parser.add_argument('--model-name', type=str, default='')
     parser.add_argument('--frame-step', type=int, default=1)
     parser.add_argument('--viz', action=options.BoolAction, default=False)
+    parser.add_argument('--data', type=str, help='Set your dataset type (e.g TruncationData')
+    parser.add_argument('--custom', type=str, help='Set your Custom dataset type (e.g Random_Box, Moving_Box ..')
+
 
 
     options.initialize(parser)
@@ -69,14 +72,14 @@ def main():
         queue_size=2 * FLAGS.batch_size) if FLAGS.viz else None
     
     # 저장 장소와 이름
-    save_dir='/home/sj/Documents/Datasets/h36m/2dKeypointNpz/H36m/TruncationData/Random_Box/metrabs'
+    save_dir=f'/home/sj/Documents/Datasets/h36m/2dKeypointNpz/H36m/{FLAGS.data}/metrabs'
     save_path=f'{save_dir}/NoBBOX_predictions_h36m.npz'
     
     
     print("Starting Predicting with H36m subject ",i_subject)
     for activity_name, camera_id in itertools.product(
             data.h36m.get_activity_names(i_subject), range(4)):
-        
+    
             print(f'Predicting S{i_subject} {activity_name} {camera_id}...')
             frame_relpaths,bboxes, camera = get_sequence(i_subject, activity_name, camera_id)
             frame_paths = [f'{paths.DATA_ROOT}/{p}' for p in frame_relpaths]
@@ -111,8 +114,10 @@ def get_sequence(i_subject, activity_name, i_camera):
     i_relevant_joints = [1, 2, 3, 6, 7, 8, 12, 13, 14, 15, 17, 18, 19, 25, 26, 27, 0]
     world_coords = coords_raw.reshape([coords_raw.shape[0], -1, 3])[:, i_relevant_joints]
     
-   
-    image_relfolder = f'h36m/Random_Box/S{i_subject}/Images/{activity_name}.{camera_name}'# h36m/Random_Box/S9/Images/Walking 1.60457274
+    if FLAGS.data=="TruncationData" : # Truncationdata
+            image_relfolder = f'h36m/{FLAGS.custom}/S{i_subject}/Images/{activity_name}.{camera_name}'# h36m/Random_Box/S9/Images/Walking 1.60457274
+    else: # Normal data
+            image_relfolder = f'h36m/S{i_subject}/Images/{activity_name}.{camera_name}'# h36m/Random_Box/S9/Images/Walking 1.60457274
 
     image_relpaths = [f'{image_relfolder}/frame_{i_frame:06d}.jpg'  # h36m/Random_Box/S9/Images/Directions.54138969/frame_000001.jpg
                       for i_frame in range(0, n_total_frames, FLAGS.frame_step)]
@@ -137,13 +142,14 @@ def predict_sequence(predict_fn,dataset, frame_batches_cpu,camera,viz):
     for (frames_b, box_b), frames_b_cpu in zip(dataset, frame_batches_cpu):
         # gt bounding box 없이 predict, 자체적으로 bounding box를 탐지함.
         pred = predict_fn(frames_b)
-        pred = tf.nest.map_structure(lambda x: x.numpy(), pred)  # 우선 numpy로 바꾸기
+        pred = tf.nest.map_structure(lambda x: x.numpy(), pred)  
         
         pose3d=[]
         for i, a in enumerate(pred['poses3d']):
-            if a.shape[0]!=1:
+            if a.shape[0]!=1: # 포즈 없을 때
+                print("frame no pose!")
                 pose3d.append(np.zeros((1,17,3),dtype=np.float32))
-            else:
+            else: # 포즈 있을 때
                 pose3d.append(a)
         pred['poses3d']=np.stack(pose3d)
         
@@ -157,12 +163,6 @@ def predict_sequence(predict_fn,dataset, frame_batches_cpu,camera,viz):
        
                 
     return np.concatenate(pose_batches, axis=0)
-
-
-
-
-
-
 
 
 if __name__ == '__main__':

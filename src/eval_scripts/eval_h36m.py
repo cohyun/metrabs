@@ -56,33 +56,32 @@ def evaluate_multiple_seeds(all_true3d, activities):
 
 
 def evaluate(pred_path, all_true3d, activities):
-    get_all_pred_poses(pred_path)
-#     all_pred3d = get_all_pred_poses(pred_path)
-#     if len(all_pred3d) != len(all_true3d):
-#         raise Exception(f'Unequal sample count! Pred: {len(all_pred3d)}, GT: {len(all_true3d)}')
-#     i_root = -1 if FLAGS.root_last else 0
-#     all_pred3d -= all_pred3d[:, i_root, np.newaxis]
-#     all_true3d -= all_true3d[:, i_root, np.newaxis]
+    all_pred3d = get_all_pred_poses(pred_path)
+    if len(all_pred3d) != len(all_true3d):
+        raise Exception(f'Unequal sample count! Pred: {len(all_pred3d)}, GT: {len(all_true3d)}')
+    i_root = -1 if FLAGS.root_last else 0
+    all_pred3d -= all_pred3d[:, i_root, np.newaxis]
+    all_true3d -= all_true3d[:, i_root, np.newaxis]
 
-#     ordered_activities = (
-#             'Directions Discussion Eating Greeting Phoning Posing Purchases ' +
-#             'Sitting SittingDown Smoking Photo Waiting Walking WalkDog WalkTogether').split()
-#     if FLAGS.procrustes:
-#         all_pred3d = tfu3d.rigid_align(all_pred3d, all_true3d, scale_align=True)
-#     #mpjpe 값 계산 
-#     dist = np.linalg.norm(all_true3d - all_pred3d, axis=-1)   # dist.shape =(317668,17) 모든 프레임에 대한 17개의 관절좌표 오차
-#     overall_mean_error = np.mean(dist) # 전체 오차 평균
-#     metrics = [np.mean(dist[activities == activity]) for activity in ordered_activities] #[50.718002 55.784798 49.574913 55.769592 60.70252  48.180126 56.34138
-#     metrics.append(overall_mean_error)
-#     for activity, metric in zip(ordered_activities, metrics):
-#         print(f'{activity}: {metric:.2f}')    
-#     print(f'Overall mean error: {overall_mean_error:.2f}')
-#     # return metrics
+    ordered_activities = (
+            'Directions Discussion Eating Greeting Phoning Posing Purchases ' +
+            'Sitting SittingDown Smoking Photo Waiting Walking WalkDog WalkTogether').split()
+    if FLAGS.procrustes:
+        all_pred3d = tfu3d.rigid_align(all_pred3d, all_true3d, scale_align=True)
+    #mpjpe 값 계산 
+    dist = np.linalg.norm(all_true3d - all_pred3d, axis=-1)   # dist.shape =(317668,17) 모든 프레임에 대한 17개의 관절좌표 오차
+    overall_mean_error = np.mean(dist) # 전체 오차 평균
+    metrics = [np.mean(dist[activities == activity]) for activity in ordered_activities] #[50.718002 55.784798 49.574913 55.769592 60.70252  48.180126 56.34138
+    metrics.append(overall_mean_error)
+    for activity, metric in zip(ordered_activities, metrics):
+        print(f'{activity}: {metric:.2f}')    
+    print(f'Overall mean error: {overall_mean_error:.2f}')
+    # return metrics
 
 
-# def to_latex(numbers):
-#     ##숫자 중간에 &를 끼우고 소수점 첫번째 자리까지
-#     return ' & '.join([f'{x:.1f}' for x in numbers])
+def to_latex(numbers):
+    ##숫자 중간에 &를 끼우고 소수점 첫번째 자리까지
+    return ' & '.join([f'{x:.1f}' for x in numbers])
 
 
 def load_coords(path):
@@ -129,33 +128,15 @@ def get_all_gt_poses():
 
 
 def get_all_pred_poses(path): 
-    # results = np.load(path, allow_pickle=True) # image_path 파일, coords3d_pred_world 파일   'h36m/Random_Box/S9/Images/Walking 1.60457274/frame_002445.jpg']
-    # order = np.argsort(results['image_path']) # order에 imagepath 로드 [ 10796  10797  10798 ... 307881 307882 307883]
-    # image_paths = results['image_path'][order]
-    # if FLAGS.only_S11:
-    #     needed = ['S11' in p for p in image_paths]
-    #     return results['coords3d_pred_world'][order][needed]
-    # return results['coords3d_pred_world'][order]
+    results = np.load(path, allow_pickle=True) # image_path 파일, coords3d_pred_world 파일   'h36m/Random_Box/S9/Images/Walking 1.60457274/frame_002445.jpg']
+    order = np.argsort(results['image_path']) # order에 imagepath 로드 [ 10796  10797  10798 ... 307881 307882 307883]
+    image_paths = results['image_path'][order]
+    if FLAGS.only_S11:
+        needed = ['S11' in p for p in image_paths]
+        return results['coords3d_pred_world'][order][needed]
+    return results['coords3d_pred_world'][order]
 
-    data = np.load(path, allow_pickle=True)
-    activity_idx = np.where(np.char.startswith(data['image_path'].astype(str), 'h36m/Random_Box/S9/Images/Directions.54138969/frame_000023'))[0]
-    print(activity_idx)
-    sitting_1_coords = data['coords3d_pred_world'][activity_idx]
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    # 3D 포즈 그리기
-    for i in range(sitting_1_coords.shape[0]):
-        x, y, z = sitting_1_coords[i, :, :].T
-        ax.scatter(x, y, z)
-
-    # 그래프 축 라벨링
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-
-    # 그래프 보이기
-    plt.show()
+  
 
 if __name__ == '__main__':
     main()
