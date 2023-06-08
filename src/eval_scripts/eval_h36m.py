@@ -69,7 +69,7 @@ def evaluate(pred_path, all_true3d, activities):
     if FLAGS.procrustes:
         all_pred3d = tfu3d.rigid_align(all_pred3d, all_true3d, scale_align=True)
     #mpjpe 값 계산 
-    dist = np.linalg.norm(all_true3d - all_pred3d, axis=-1)   # dist.shape =(317668,17) 모든 프레임에 대한 17개의 관절좌표 오차
+    dist = np.linalg.norm(all_true3d - all_pred3d, axis=-1)   # dist.shape =(317668,17) 317668개의 프레임에 대한 17개의 관절좌표 오차
     overall_mean_error = np.mean(dist) # 전체 오차 평균
     metrics = [np.mean(dist[activities == activity]) for activity in ordered_activities] #[50.718002 55.784798 49.574913 55.769592 60.70252  48.180126 56.34138
     metrics.append(overall_mean_error)
@@ -124,6 +124,7 @@ def get_all_gt_poses():
     if FLAGS.only_S11:
         needed = ['S11' in p for p in all_image_relpaths]
         return all_image_relpaths[needed], all_world_coords[needed]
+    
     return all_image_relpaths, all_world_coords
 
 
@@ -131,6 +132,8 @@ def get_all_pred_poses(path):
     results = np.load(path, allow_pickle=True) # image_path 파일, coords3d_pred_world 파일   'h36m/Random_Box/S9/Images/Walking 1.60457274/frame_002445.jpg']
     order = np.argsort(results['image_path']) # order에 imagepath 로드 [ 10796  10797  10798 ... 307881 307882 307883]
     image_paths = results['image_path'][order]
+    print(results['image_path'][215528])
+    print(results['coords3d_pred_world'][215528] /1000)
     if FLAGS.only_S11:
         needed = ['S11' in p for p in image_paths]
         return results['coords3d_pred_world'][order][needed]

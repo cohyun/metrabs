@@ -91,10 +91,12 @@ def main():
             coords_all.append(coords3d_pred_world)
             print("\ncoords_all\n",coords_all)
             print("shape: ",coords_all[0].shape)
+            
+            
 
-    np.savez(save_path,image_path=np.concatenate(image_relpaths_all, axis=0),
-             coords3d_pred_world=np.concatenate(coords_all, axis=0))
-    print('np saved...')
+    # np.savez(save_path,image_path=np.concatenate(image_relpaths_all, axis=0),
+    #          coords3d_pred_world=np.concatenate(coords_all, axis=0))
+    # print('np saved...')
 
     if FLAGS.viz:
         viz.close()
