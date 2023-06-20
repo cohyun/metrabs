@@ -63,7 +63,6 @@ def main():
     image_relpaths_all = []
     coords_all = []
     i_subject=9
-    print("Starting Predicting with H36m subject ",i_subject)
 
     # poseviz 설정
     viz = poseviz.PoseViz(

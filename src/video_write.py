@@ -25,21 +25,22 @@ def initialize():
 
 def main():
     initialize()
-    model = tf.saved_model.load(download_model('metrabs_eff2l_y4_360'))
+    model_path='/home/sj/Documents/Models/metrabs_eff2l_y4'
+
+    model = tf.saved_model.load(model_path)
     skeleton = 'h36m_17'
     joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
     joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
 
     # fig와 ax 생성
-    fig = plt.figure()
-    ax1 = fig.add_subplot(121)
+    fig = plt.figure(figsize=(10,10))
 
-    ax = fig.add_subplot(122, projection='3d')
+    ax = fig.add_subplot(111, projection='3d')
 
     frame_batches = tf.data.Dataset.from_generator(
         frames_from_video, tf.uint8, [None, None, 3]).batch(32).prefetch(1)
     
-    writer = cv2.VideoWriter('skeleton_animation.avi', cv2.VideoWriter_fourcc(*'MJPG'), 50, (640, 480))
+    writer = cv2.VideoWriter('skeleton_animation.avi', cv2.VideoWriter_fourcc(*'MJPG'), 50, (1000, 1000))
 
     for frame_batch in frame_batches:
         pred = model.detect_poses_batched(frame_batch, skeleton=skeleton, default_fov_degrees=55)
@@ -58,6 +59,8 @@ def main():
                 ax.set_zticklabels([])
                 
             if FLAGS.origin:
+                ax1 = fig.add_subplot(121)
+
                 # 원래 영상 그리기
                 ax1.clear()
                 ax1.imshow(frame)
@@ -99,9 +102,9 @@ def plot_skeleton(poses3d, joint_edges, fig, ax):
         x1, y1, z1 = poses3d[joint1]
         x2, y2, z2 = poses3d[joint2]
         if joint1 in [0,1,2,3,8,13,14,15]:
-            ax.plot([x1, x2], [z1, z2],[y1, y2],  color='black')
+            ax.plot([x1, x2], [z1, z2],[y1, y2],  color='red')
         else:
-            ax.plot([x1, x2], [z1, z2], [y1, y2], color='red')
+            ax.plot([x1, x2], [z1, z2], [y1, y2], color='black')
 
 
     center = np.mean(poses3d, axis=0)
@@ -110,6 +113,7 @@ def plot_skeleton(poses3d, joint_edges, fig, ax):
     ax.set_xlim3d([-max_range + center[0], max_range + center[0]])
     ax.set_ylim3d([-max_range + center[2], max_range + center[2]])
     ax.set_zlim3d([-max_range + center[1], max_range + center[1]])
+
 
     # z 축 뒤집기
     ax.invert_zaxis()
@@ -120,7 +124,7 @@ def plot_skeleton(poses3d, joint_edges, fig, ax):
     ax.set_zticklabels([])
 
     # 카메라 위치 변경 (elev: 수직각도 azim: 수평회전각도) 75 90
-    ax.view_init(elev=10, azim=-100)
+    ax.view_init(elev=15, azim=-100)
     
 
     plt.show(block=False) 

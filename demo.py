@@ -11,10 +11,11 @@ def main():
 
     pred = model.detect_poses(image, default_fov_degrees=55, skeleton=skeleton)
     pred = tf.nest.map_structure(lambda x: x.numpy(), pred)  # convert tensors to numpy arrays
-    print(pred['boxes'], pred['poses3d'], pred['poses2d'])
+    # print(pred['boxes'], pred['poses3d'], pred['poses2d'])
 
     joint_names = model.per_skeleton_joint_names[skeleton].numpy().astype(str)
     joint_edges = model.per_skeleton_joint_edges[skeleton].numpy()
+    print(joint_names)
     visualize(image.numpy(), pred, joint_names, joint_edges)
 
     # Read the docs to learn how to
@@ -30,7 +31,7 @@ def download_model(model_type):
     model_zippath = tf.keras.utils.get_file(
         origin=f'{server_prefix}/{model_type}.zip',
         extract=True, cache_subdir='models')
-    model_path = os.path.join(os.path.dirname(model_zippath), model_type)
+    model_path = '/home/sj/Documents/Models/metrabs_eff2l_y4'
     return model_path
 
 
