@@ -97,7 +97,7 @@ def load_coords(path):
 
 def get_all_gt_poses():
     camera_names = ['54138969', '55011271', '58860488', '60457274']
-    # 프레임 몇 개씩 뛰고 가져올지 설정
+    # 프레임 몇 개씩 뛰고 가져올지 설정 1로 설정해서 frame flikering 결괏값에 반영될 수 있도록 
     frame_step = 1
     all_world_coords = []
     all_image_relpaths = []

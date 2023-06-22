@@ -95,7 +95,7 @@ def download_model(model_type):
 
 
 def plot_skeleton(poses3d, joint_edges, fig, ax):
-    # 이전에 그려진 스켈레톤 지우기
+    # clear skeleton
     ax.clear()
 
     for joint1, joint2 in joint_edges:
@@ -118,7 +118,7 @@ def plot_skeleton(poses3d, joint_edges, fig, ax):
     # z 축 뒤집기
     ax.invert_zaxis()
     
-    # 축 숫자 숨기기    
+    # hide axis figs   
     ax.set_xticklabels([])
     ax.set_yticklabels([])
     ax.set_zticklabels([])

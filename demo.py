@@ -7,7 +7,7 @@ import tensorflow as tf
 def main():
     model = tf.saved_model.load(download_model('metrabs_eff2l_y4'))
     image = tf.image.decode_jpeg(tf.io.read_file('frame.jpg'))
-    skeleton = 'smpl_24'
+    skeleton = 'mpi_inf_3dhp_17'
 
     pred = model.detect_poses(image, default_fov_degrees=55, skeleton=skeleton)
     pred = tf.nest.map_structure(lambda x: x.numpy(), pred)  # convert tensors to numpy arrays
@@ -36,12 +36,12 @@ def download_model(model_type):
 
 
 def visualize(image, pred, joint_names, joint_edges):
-    try:
-        visualize_poseviz(image, pred, joint_names, joint_edges)
-    except ImportError:
-        print(
-            'Install PoseViz from https://github.com/isarandi/poseviz to get a nicer 3D'
-            'visualization.')
+    # try:
+    #     visualize_poseviz(image, pred, joint_names, joint_edges)
+    # except ImportError:
+    #     print(
+    #         'Install PoseViz from https://github.com/isarandi/poseviz to get a nicer 3D'
+    #         'visualization.')
         visualize_matplotlib(image, pred, joint_names, joint_edges)
 
 
@@ -83,6 +83,8 @@ def visualize_matplotlib(image, pred, joint_names, joint_edges):
         for i_start, i_end in joint_edges:
             image_ax.plot(*zip(pose2d[i_start], pose2d[i_end]), marker='o', markersize=2)
             pose_ax.plot(*zip(pose3d[i_start], pose3d[i_end]), marker='o', markersize=2)
+            image_ax.text(pose2d[i_start][0], pose2d[i_start][1], joint_names[i_start], fontsize=8)
+            pose_ax.text(pose3d[i_start][0], pose3d[i_start][1], pose3d[i_start][2], joint_names[i_start], fontsize=8)
         image_ax.scatter(*pose2d.T, s=2)
         pose_ax.scatter(*pose3d.T, s=2)
 

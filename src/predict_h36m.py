@@ -33,6 +33,7 @@ def initialize():
     parser.add_argument('--viz', action=options.BoolAction, default=False)
     parser.add_argument('--extract',type=bool, help='Set True if you have to extract frames from video')
     parser.add_argument('--custom', type=str, help='Set your Custom dataset type (e.g Random_Box, Moving_Box ..')
+    parser.add_argument('--part', type=str, help='Set your part where to occlude (e.g Upper Middle Lower')
     parser.add_argument('--single-path',type=str)
 
     options.initialize(parser)
@@ -193,7 +194,10 @@ def extract_frames_customdata():
     if not FLAGS.custom : #Normal data
         video_paths = sorted(glob.glob(f'{paths.DATA_ROOT}/h36m/S9/Videos/*.mp4', recursive=True)) 
     else: # Truncation data
-        video_paths = sorted(glob.glob(f'{paths.DATA_ROOT}/h36m/{FLAGS.custom}/S9/*.mp4', recursive=True)) 
+        if FLAGS.part: #fixed_box
+            video_paths = sorted(glob.glob(f'{paths.DATA_ROOT}/h36m/{FLAGS.custom}/{FLAGS.part}/S9/*.mp4', recursive=True)) 
+        else: #Moving box or Random box
+            video_paths = sorted(glob.glob(f'{paths.DATA_ROOT}/h36m/{FLAGS.custom}/S9/*.mp4', recursive=True)) 
     for video_path in video_paths:
         video_name=pathlib.Path(video_path).stem #_ALL.60457274
         if not FLAGS.custom:
